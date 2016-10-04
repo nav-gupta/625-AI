@@ -4,8 +4,8 @@ import copy
 import time
 
 initial_board = [[1, 3, 4], [8, 6, 2], [7, 0, 5]];
-final_board = [[1, 3, 4], [8, 6, 2], [0, 7, 5]];
-#initial_board = [[1, 2, 3], [8, 6, 4], [7, 0, 5]];
+#final_board = [[1, 3, 4], [8, 6, 2], [0, 7, 5]];
+final_board = [[1, 2, 3], [8, 0, 4], [7, 6, 5]];
 
 def move(node, x, y, dx, dy):
     new_matrix = copy.deepcopy(node.matrix)
@@ -81,9 +81,24 @@ def lifo_ids_queue(nodes, new_nodes, depth):
     return nodes
 
 #Priority Queue - for Greedy BFS
-def pq(nodes, new_nodes, depth=None):
+def pq_greedy(nodes, new_nodes, depth=None):
     nodes.extend(new_nodes)
-    sorted(nodes, key = heuristic)
+    sorted(nodes, key = eval_fun_greedy)
+    #nodes.sort(cmp)
+    return nodes
+
+#Priority Queue - for A-Star
+def pq_astar(nodes, new_nodes, depth=None):
+    nodes.extend(new_nodes)
+    sorted(nodes, key = eval_fun_astar)
+    #nodes.sort(cmp)
+    return nodes
+
+#Priority Queue - for IDA-Star
+def pq_idastar(nodes, new_nodes, depth=None):
+    if (new_nodes[0].depth <= depth):
+        nodes.extend(new_nodes)
+    sorted(nodes, key = eval_fun_astar)
     #nodes.sort(cmp)
     return nodes
 
@@ -105,6 +120,12 @@ def outOfPlace_heur(node):
 
 def heuristic(node):
     return manhattanDist_heur(node)
+
+def eval_fun_greedy(node):
+    return heuristic(node)
+
+def eval_fun_astar(node):
+    return heuristic(node) + node.depth
 
 def search(initial_state, queue_fn, depth=None):
     max_nodes = 1
@@ -143,9 +164,20 @@ def ids(initial_state, max_depth):
     return result
 
 def greedy_bfs(initial_state):
-    return search(initial_state, pq)
+    return search(initial_state, pq_greedy)
 
+def astar(initial_state):
+    return search(initial_state, pq_astar)
 
+def idastar(initial_state, max_depth):
+    result = Result(None, 0, 0)
+    for depth in range(max_depth + 1):
+        print("Depth : ", depth)
+        temp_result = search(initial_state, pq_idastar, depth)
+        result.update(temp_result)
+        if result.node:
+            break
+    return result
 
 def print_path(node, path):
     if (node == None or node.parent == None):
@@ -171,6 +203,7 @@ if __name__ == '__main__':
     initial_state = Node(initial_board, 0);
     final_state = Node(final_board);
     finalpos_map = final_pos(final_state)
+
     #DFS
     print("\ndfs ----\n");
     result = dfs(initial_state)
@@ -205,6 +238,27 @@ if __name__ == '__main__':
     #Greedy - BFS
     print("\ng-bfs -----\n");
     result = greedy_bfs(initial_state)
+    print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
+    stop = time.time()
+    #print("time : ", stop - start)
+    path = []
+    print_path(result.node, path)
+    print("path : ", path)
+
+    #A-STAR
+    print("\na-star -----\n");
+    result = astar(initial_state)
+    print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
+    stop = time.time()
+    #print("time : ", stop - start)
+    path = []
+    print_path(result.node, path)
+    print("path : ", path)
+
+    #IDA-STAR
+    print("\nida-star ----- max depth : ", depth_ids, "\n")
+    depth_ids = 3
+    result = idastar(initial_state, depth_ids)
     print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
     stop = time.time()
     #print("time : ", stop - start)
