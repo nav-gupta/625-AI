@@ -3,7 +3,9 @@
 import copy
 import time
 
-initial_board = [[1, 3, 4], [8, 6, 2], [7, 0, 5]];
+initial_board_easy = [[1, 3, 4], [8, 6, 2], [7, 0, 5]];
+initial_board_medium = [[2, 8, 1], [0, 4, 3], [7, 6, 5]];
+initial_board_hard = [[5, 6, 7], [4, 0, 8], [3, 2, 1]];
 #final_board = [[1, 3, 4], [8, 6, 2], [0, 7, 5]];
 final_board = [[1, 2, 3], [8, 0, 4], [7, 6, 5]];
 
@@ -29,14 +31,14 @@ class Node:
     def moves(self):
         children = []
         x, y =  self.blank_tile
-        if x > 0:
-            children.append(move(self, x, y, -1, 0))
         if x < 2:
             children.append(move(self, x, y, +1, 0))
-        if y > 0:
-            children.append(move(self, x, y, 0, -1))
+        if x > 0:
+            children.append(move(self, x, y, -1, 0))
         if y < 2:
             children.append(move(self, x, y, 0, +1))
+        if y > 0:
+            children.append(move(self, x, y, 0, -1))
         return children
 
     def if_already_visited(self, visited):
@@ -83,14 +85,14 @@ def lifo_ids_queue(nodes, new_nodes, depth):
 #Priority Queue - for Greedy BFS
 def pq_greedy(nodes, new_nodes, depth=None):
     nodes.extend(new_nodes)
-    sorted(nodes, key = eval_fun_greedy)
+    nodes = sorted(nodes, key = eval_fun_greedy)
     #nodes.sort(cmp)
     return nodes
 
 #Priority Queue - for A-Star
 def pq_astar(nodes, new_nodes, depth=None):
     nodes.extend(new_nodes)
-    sorted(nodes, key = eval_fun_astar)
+    nodes = sorted(nodes, key = eval_fun_astar)
     #nodes.sort(cmp)
     return nodes
 
@@ -98,7 +100,7 @@ def pq_astar(nodes, new_nodes, depth=None):
 def pq_idastar(nodes, new_nodes, depth=None):
     if (new_nodes[0].depth <= depth):
         nodes.extend(new_nodes)
-    sorted(nodes, key = eval_fun_astar)
+    nodes = sorted(nodes, key = eval_fun_astar)
     #nodes.sort(cmp)
     return nodes
 
@@ -179,6 +181,26 @@ def idastar(initial_state, max_depth):
             break
     return result
 
+def print_path_iter(node, path):
+    while node != None and node.parent != None:
+        x, y = node.blank_tile
+        x1, y1 = node.parent.blank_tile
+        if (x == x1 + 1):
+            #print("DOWN ")
+            path.append("DOWN")
+        elif (x == x1 - 1):
+            #print("UP ")
+            path.append("UP")
+        elif (y == y1 + 1):
+            #print("RIGHT ")
+            path.append("RIGHT")
+        else:
+            #print("LEFT ")
+            path.append("LEFT")    
+        node = node.parent
+    path.reverse()
+        
+        
 def print_path(node, path):
     if (node == None or node.parent == None):
         return
@@ -200,68 +222,71 @@ def print_path(node, path):
 
 if __name__ == '__main__':
     start = time.time()
-    initial_state = Node(initial_board, 0);
+    initial_board = [initial_board_easy, initial_board_medium, initial_board_hard]
+    #initial_state = Node(initial_board, 0);
     final_state = Node(final_board);
     finalpos_map = final_pos(final_state)
 
-    #DFS
-    print("\ndfs ----\n");
-    result = dfs(initial_state)
-    print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
-    stop = time.time()
-    #print("time : ", stop - start)
-    path = []
-    print_path(result.node, path)
-    print("path : ", path)
+    for board in initial_board:
+        initial_state = Node(board, 0)
+        #DFS
+        print("\ndfs ----\n");
+        result = dfs(initial_state)
+        print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
+        stop = time.time()
+        #print("time : ", stop - start)
+        path = []
+        print_path_iter(result.node, path)
+        print("path : ", path)
 
-    #BFS
-    print("\nbfs ---- \n");
-    result = bfs(initial_state)
-    print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
-    stop = time.time()
-    #print("time : ", stop - start)
-    path = []
-    print_path(result.node, path)
-    print("path : ", path)
+        #BFS
+        print("\nbfs ---- \n");
+        result = bfs(initial_state)
+        print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
+        stop = time.time()
+        #print("time : ", stop - start)
+        path = []
+        print_path_iter(result.node, path)
+        print("path : ", path)
 
-    #IDS
-    depth_ids = 3
-    print("\nids ---- max depth : ", depth_ids, "\n");
-    result = ids(initial_state, depth_ids)
-    print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
-    stop = time.time()
-    #print("time : ", stop - start)
-    path = []
-    print_path(result.node, path)
-    print("path : ", path)
+        #IDS
+        depth_ids = 30
+        print("\nids ---- max depth : ", depth_ids, "\n");
+        result = ids(initial_state, depth_ids)
+        print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
+        stop = time.time()
+        #print("time : ", stop - start)
+        path = []
+        print_path_iter(result.node, path)
+        print("path : ", path)
 
-    #Greedy - BFS
-    print("\ng-bfs -----\n");
-    result = greedy_bfs(initial_state)
-    print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
-    stop = time.time()
-    #print("time : ", stop - start)
-    path = []
-    print_path(result.node, path)
-    print("path : ", path)
+        #Greedy - BFS
+        print("\ng-bfs -----\n");
+        result = greedy_bfs(initial_state)
+        print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
+        stop = time.time()
+        #print("time : ", stop - start)
+        path = []
+        print_path_iter(result.node, path)
+        print("path : ", path)
 
-    #A-STAR
-    print("\na-star -----\n");
-    result = astar(initial_state)
-    print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
-    stop = time.time()
-    #print("time : ", stop - start)
-    path = []
-    print_path(result.node, path)
-    print("path : ", path)
+        #A-STAR
+        print("\na-star -----\n");
+        result = astar(initial_state)
+        print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
+        stop = time.time()
+        #print("time : ", stop - start)
+        path = []
+        print_path_iter(result.node, path)
+        print("path : ", path)
 
-    #IDA-STAR
-    print("\nida-star ----- max depth : ", depth_ids, "\n")
-    depth_ids = 3
-    result = idastar(initial_state, depth_ids)
-    print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
-    stop = time.time()
-    #print("time : ", stop - start)
-    path = []
-    print_path(result.node, path)
-    print("path : ", path)
+        #IDA-STAR
+        print("\nida-star ----- max depth : ", depth_ids, "\n")
+        depth_ids = 30
+        result = idastar(initial_state, depth_ids)
+        print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
+        stop = time.time()
+        #print("time : ", stop - start)
+        path = []
+        print_path_iter(result.node, path)
+        print("path : ", path)
