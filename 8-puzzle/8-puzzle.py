@@ -6,15 +6,16 @@ import time
 initial_board_easy = [[1, 3, 4], [8, 6, 2], [7, 0, 5]];
 initial_board_medium = [[2, 8, 1], [0, 4, 3], [7, 6, 5]];
 initial_board_hard = [[5, 6, 7], [4, 0, 8], [3, 2, 1]];
-#final_board = [[1, 3, 4], [8, 6, 2], [0, 7, 5]];
 final_board = [[1, 2, 3], [8, 0, 4], [7, 6, 5]];
 
+# to generate possible moves relevant to the given position on the board.
 def move(node, x, y, dx, dy):
     new_matrix = copy.deepcopy(node.matrix)
     new_matrix[x][y] = new_matrix[x + dx][y + dy]
     new_matrix[x + dx][y + dy] = 0
     return Node(new_matrix, node.depth + 1, node);
 
+# custom hash to place Node in a set - for visited nodes
 def generate_key(matrix):
     key = ""
     for x in range(3):
@@ -22,6 +23,11 @@ def generate_key(matrix):
             key = key + str(matrix[x][y])
     return key
 
+# class to store all the info about a move - 
+#       board config 0 matrix
+#       parent 
+#       depth
+#       key 
 class Node:
     def __init__(self, matrix, depth=None, parent=None):
         self.matrix = matrix
@@ -33,9 +39,11 @@ class Node:
         self.depth = depth
         self.key = generate_key(matrix)
 
+    # to check if goal is reached
     def goal_test(self):
         return self.matrix == final_state.matrix
 
+    # returns a list of children(moves)
     def moves(self):
         children = []
         x, y =  self.blank_tile
@@ -49,22 +57,27 @@ class Node:
             children.append(move(self, x, y, 0, -1))
         return children
 
+    # to check if this node has already been visited before.
     def if_already_visited(self, visited):
         if self.key in visited:
             return True
         return False
 
+# class to store the results of different algorithms
 class Result:
     def __init__(self, node, mem_needed, steps):
         self.node = node
         self.mem_needed = mem_needed
         self.steps = steps
 
+    # to update the result - like when multiple iterations are done for increasing depths(idfs, idastar)
     def update(self, other):
         self.node = other.node
         self.mem_needed = max(self.mem_needed, other.mem_needed)
         self.steps += other.steps
 
+# to generate coordinates for different elements in the final board.
+# This is needed to calculate heuristics, when you need coordinates given an element.
 def final_pos(node):
     finalpos = {}
     for x in range(3):
@@ -92,14 +105,14 @@ def lifo_ids_queue(nodes, new_nodes, depth):
 #Priority Queue - for Greedy BFS
 def pq_greedy(nodes, new_nodes, depth=None):
     nodes.extend(new_nodes)
-    nodes = sorted(nodes, key = eval_fun_greedy)
+    nodes = sorted(nodes, key = eval_func_greedy)
     #nodes.sort(cmp)
     return nodes
 
 #Priority Queue - for A-Star
 def pq_astar(nodes, new_nodes, depth=None):
     nodes.extend(new_nodes)
-    nodes = sorted(nodes, key = eval_fun_astar)
+    nodes = sorted(nodes, key = eval_func_astar)
     #nodes.sort(cmp)
     return nodes
 
@@ -107,10 +120,11 @@ def pq_astar(nodes, new_nodes, depth=None):
 def pq_idastar(nodes, new_nodes, depth=None):
     if (new_nodes[0].depth <= depth):
         nodes.extend(new_nodes)
-    nodes = sorted(nodes, key = eval_fun_astar)
+    nodes = sorted(nodes, key = eval_func_astar)
     #nodes.sort(cmp)
     return nodes
 
+#Heuristic - Manhattan Distance
 def manhattanDist_heur(node):
     cost = 0
     for x in range(3):
@@ -119,6 +133,7 @@ def manhattanDist_heur(node):
             cost += abs(x_final - x) + (y_final - y)
     return cost
 
+#Heuristic - #Out of Place Tiles 
 def outOfPlace_heur(node):
     cost = 0
     for x in range(3):
@@ -130,12 +145,13 @@ def outOfPlace_heur(node):
 def heuristic(node):
     return manhattanDist_heur(node)
 
-def eval_fun_greedy(node):
+def eval_func_greedy(node):
     return heuristic(node)
 
-def eval_fun_astar(node):
+def eval_func_astar(node):
     return heuristic(node) + node.depth
 
+# General Search Algorithm
 def search(initial_state, queue_fn, depth=None):
     max_nodes = 1
     steps = 0
@@ -165,7 +181,7 @@ def bfs(initial_state):
 def ids(initial_state, max_depth):
     result = Result(None, 0, 0)
     for depth in range(max_depth + 1):
-        print("Depth : ", depth)
+#print("Depth : ", depth)
         temp_result = search(initial_state, lifo_ids_queue, depth)
         result.update(temp_result)
         if result.node:
@@ -181,13 +197,14 @@ def astar(initial_state):
 def idastar(initial_state, max_depth):
     result = Result(None, 0, 0)
     for depth in range(max_depth + 1):
-        print("Depth : ", depth)
+#print("Depth : ", depth)
         temp_result = search(initial_state, pq_idastar, depth)
         result.update(temp_result)
         if result.node:
             break
     return result
 
+# iteratively printing path given the goal node - assuming that each node has its parent stored within
 def print_path_iter(node, path):
     while node != None and node.parent != None:
         x, y = node.blank_tile
@@ -208,6 +225,7 @@ def print_path_iter(node, path):
     path.reverse()
         
         
+# recursively printing path given the goal node - assuming that each node has its parent stored within
 def print_path(node, path):
     if (node == None or node.parent == None):
         return
@@ -228,7 +246,6 @@ def print_path(node, path):
         path.append("LEFT")
 
 if __name__ == '__main__':
-    start = time.time()
     initial_board = [initial_board_easy, initial_board_medium, initial_board_hard]
     final_state = Node(final_board);
     finalpos_map = final_pos(final_state)
@@ -239,7 +256,8 @@ if __name__ == '__main__':
         print("Case - ", difficulty_classifier[count], '\n')
         initial_state = Node(board, 0)
         #DFS
-        print("\ndfs ----\n");
+        print("dfs ----\n");
+        start = time.time()
         result = dfs(initial_state)
         print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
         stop = time.time()
@@ -250,6 +268,7 @@ if __name__ == '__main__':
 
         #BFS
         print("\nbfs ---- \n");
+        start = time.time()
         result = bfs(initial_state)
         print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
         stop = time.time()
@@ -259,8 +278,9 @@ if __name__ == '__main__':
         print("path : ", path)
 
         #IDS
-        depth_ids = 30
-        print("\nids ---- max depth : ", depth_ids, "\n");
+        depth_ids = 100
+        print("\nids ---- ");
+        start = time.time()
         result = ids(initial_state, depth_ids)
         print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
         stop = time.time()
@@ -271,6 +291,7 @@ if __name__ == '__main__':
 
         #Greedy - BFS
         print("\ng-bfs -----\n");
+        start = time.time()
         result = greedy_bfs(initial_state)
         print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
         stop = time.time()
@@ -281,6 +302,7 @@ if __name__ == '__main__':
 
         #A-STAR
         print("\na-star -----\n");
+        start = time.time()
         result = astar(initial_state)
         print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
         stop = time.time()
@@ -290,8 +312,9 @@ if __name__ == '__main__':
         print("path : ", path)
 
         #IDA-STAR
-        print("\nida-star ----- max depth : ", depth_ids, "\n")
-        depth_ids = 30
+        print("\nida-star -----\n ")
+        start = time.time()
+        depth_ids = 100
         result = idastar(initial_state, depth_ids)
         print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
         stop = time.time()
@@ -299,4 +322,4 @@ if __name__ == '__main__':
         path = []
         print_path_iter(result.node, path)
         print("path : ", path)
-    count = count + 1
+        count = count + 1
