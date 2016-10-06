@@ -15,6 +15,13 @@ def move(node, x, y, dx, dy):
     new_matrix[x + dx][y + dy] = 0
     return Node(new_matrix, node.depth + 1, node);
 
+def generate_key(matrix):
+    key = ""
+    for x in range(3):
+        for y in range(3):
+            key = key + str(matrix[x][y])
+    return key
+
 class Node:
     def __init__(self, matrix, depth=None, parent=None):
         self.matrix = matrix
@@ -24,6 +31,7 @@ class Node:
                     self.blank_tile = (x, y)
         self.parent = parent
         self.depth = depth
+        self.key = generate_key(matrix)
 
     def goal_test(self):
         return self.matrix == final_state.matrix
@@ -42,9 +50,8 @@ class Node:
         return children
 
     def if_already_visited(self, visited):
-        for node in visited:
-            if node.matrix == self.matrix:
-                return True
+        if self.key in visited:
+            return True
         return False
 
 class Result:
@@ -133,12 +140,12 @@ def search(initial_state, queue_fn, depth=None):
     max_nodes = 1
     steps = 0
     nodes = [initial_state]
-    visited = []
+    visited = set()
     while nodes:
         node = nodes.pop(0)
         if node.if_already_visited(visited):
             continue
-        visited.append(node)
+        visited.add(node.key)
         if node.goal_test():
             print("goal found")
             return Result(node, max_nodes, steps);
@@ -223,18 +230,20 @@ def print_path(node, path):
 if __name__ == '__main__':
     start = time.time()
     initial_board = [initial_board_easy, initial_board_medium, initial_board_hard]
-    #initial_state = Node(initial_board, 0);
     final_state = Node(final_board);
     finalpos_map = final_pos(final_state)
 
+    difficulty_classifier = {1:'easy', 2:'medium', 3:'hard'}
+    count = 1
     for board in initial_board:
+        print("Case - ", difficulty_classifier[count], '\n')
         initial_state = Node(board, 0)
         #DFS
         print("\ndfs ----\n");
         result = dfs(initial_state)
         print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
         stop = time.time()
-        #print("time : ", stop - start)
+        print("time : ", stop - start)
         path = []
         print_path_iter(result.node, path)
         print("path : ", path)
@@ -244,7 +253,7 @@ if __name__ == '__main__':
         result = bfs(initial_state)
         print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
         stop = time.time()
-        #print("time : ", stop - start)
+        print("time : ", stop - start)
         path = []
         print_path_iter(result.node, path)
         print("path : ", path)
@@ -255,7 +264,7 @@ if __name__ == '__main__':
         result = ids(initial_state, depth_ids)
         print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
         stop = time.time()
-        #print("time : ", stop - start)
+        print("time : ", stop - start)
         path = []
         print_path_iter(result.node, path)
         print("path : ", path)
@@ -265,7 +274,7 @@ if __name__ == '__main__':
         result = greedy_bfs(initial_state)
         print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
         stop = time.time()
-        #print("time : ", stop - start)
+        print("time : ", stop - start)
         path = []
         print_path_iter(result.node, path)
         print("path : ", path)
@@ -275,7 +284,7 @@ if __name__ == '__main__':
         result = astar(initial_state)
         print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
         stop = time.time()
-        #print("time : ", stop - start)
+        print("time : ", stop - start)
         path = []
         print_path_iter(result.node, path)
         print("path : ", path)
@@ -286,7 +295,8 @@ if __name__ == '__main__':
         result = idastar(initial_state, depth_ids)
         print("memory needed : ", result.mem_needed, " \nnodes visited : ", result.steps)
         stop = time.time()
-        #print("time : ", stop - start)
+        print("time : ", stop - start)
         path = []
         print_path_iter(result.node, path)
         print("path : ", path)
+    count = count + 1
